@@ -1,0 +1,45 @@
+{
+  "system_info": {
+    "vector_database": "FAISS",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "gnn_model_loaded": true,
+    "lstm_model_loaded": true,
+    "fusion_model_loaded": true
+  },
+  "performance": [
+    {
+      "Model": "FUSION",
+      "Accuracy": 0.748221906116643,
+      "Precision": 0.8,
+      "Recall": 0.4393939393939394,
+      "F1": 0.5672371638141809,
+      "AUC": 0.7290307689652791
+    },
+    {
+      "Model": "GNN",
+      "Accuracy": 0.5554765291607396,
+      "Precision": 0.3905191873589165,
+      "Recall": 0.32765151515151514,
+      "F1": 0.35633367662203913,
+      "AUC": 0.5249091858217713
+    }
+  ],
+  "best_model": {
+    "name": "FUSION",
+    "f1": 0.5672371638141809
+  },
+  "explanation_stats": {
+    "total_samples": 1406,
+    "fraud_predictions": 290,
+    "legit_predictions": 1116,
+    "avg_probability": 0.2484794557094574,
+    "max_probability": 0.9791477918624878,
+    "min_probability": 0.017379360273480415
+  },
+  "output_files": {
+    "evaluation_plot": "C:\\Users\\youss\\Downloads\\Flag_finance\\pipeline_output\\complete_pipeline_evaluation.png",
+    "sample_predictions": "C:\\Users\\youss\\Downloads\\Flag_finance\\pipeline_output\\sample_predictions.json",
+    "rag_sample_explanations": "C:\\Users\\youss\\Downloads\\Flag_finance\\rag_output\\sample_explanations.json",
+    "service_bundle": "C:\\Users\\youss\\Downloads\\Flag_finance\\e2e_pipeline"
+  }
+}

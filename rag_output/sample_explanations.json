@@ -1,0 +1,32 @@
+[
+  {
+    "sample_id": 47,
+    "explanation": "This PAYMENT transaction of $14,241.21 is flagged as FRAUD with high confidence (probability 97.91%). Key indicators: origin balance mismatch, destination balance mismatch.",
+    "fraud_probability": 0.9791477918624878,
+    "status": "CORRECT"
+  },
+  {
+    "sample_id": 25,
+    "explanation": "This CASH_OUT transaction of $6.57 is flagged as FRAUD with high confidence (probability 97.89%). Key indicators: origin balance mismatch, destination balance mismatch.",
+    "fraud_probability": 0.97891765832901,
+    "status": "CORRECT"
+  },
+  {
+    "sample_id": 852,
+    "explanation": "This TRANSFER transaction of $61,830.83 is flagged as FRAUD with high confidence (probability 97.86%). Key indicators: origin balance mismatch, destination balance mismatch.",
+    "fraud_probability": 0.9786377549171448,
+    "status": "CORRECT"
+  },
+  {
+    "sample_id": 1279,
+    "explanation": "This CASH_OUT transaction of $97,252.66 is flagged as FRAUD with high confidence (probability 97.77%). Key indicators: origin balance mismatch.",
+    "fraud_probability": 0.9776715636253357,
+    "status": "CORRECT"
+  },
+  {
+    "sample_id": 936,
+    "explanation": "This CASH_OUT transaction of $81,067.66 is flagged as FRAUD with high confidence (probability 97.71%). Key indicators: origin balance mismatch, destination balance mismatch.",
+    "fraud_probability": 0.977064311504364,
+    "status": "CORRECT"
+  }
+]

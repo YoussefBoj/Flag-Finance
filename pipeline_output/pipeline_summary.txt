@@ -1,0 +1,37 @@
+FLAG-FINANCE PIPELINE EXECUTION REPORT
+================================================================================
+
+Execution Date: 2025-11-07 17:14:26
+
+BEST MODEL
+----------
+Model: FUSION
+F1 Score: 0.5672
+Accuracy: 0.7482
+Precision: 0.8000
+Recall: 0.4394
+AUC: 0.7290
+
+FRAUD DETECTION PERFORMANCE
+---------------------------
+Total Transactions Analyzed (fusion test): 1406
+Fraud Predictions: 290
+Detection Rate (Recall): 43.94%
+
+OUTPUT FILES
+------------
+  • Pipeline Report: C:\Users\youss\Downloads\Flag_finance\pipeline_output\pipeline_report.json
+  • Predictions: C:\Users\youss\Downloads\Flag_finance\pipeline_output\all_predictions.pkl
+  • Comparison Table: C:\Users\youss\Downloads\Flag_finance\pipeline_output\model_comparison.csv
+  • Evaluation Plot: C:\Users\youss\Downloads\Flag_finance\pipeline_output\complete_pipeline_evaluation.png
+  • Sample Predictions: C:\Users\youss\Downloads\Flag_finance\pipeline_output\sample_predictions.json
+  • Service Bundle: C:\Users\youss\Downloads\Flag_finance\e2e_pipeline
+
+NEXT STEPS
+----------
+1. Review sample predictions for qualitative validation
+2. Deploy the best fusion model via the exported FastAPI service
+3. Configure monitoring & alerting on fraud detection metrics
+4. Integrate RAG explanations into downstream dashboards
+5. Package pipeline into CI/CD workflow with Docker image
+================================================================================

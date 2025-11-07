@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-11-07T17:06:53.107007",
+  "config": {
+    "gnn": {
+      "input_dim": 100,
+      "hidden_dim": 320,
+      "num_layers": 4,
+      "dropout": 0.4
+    },
+    "lstm": {
+      "input_dim": 18,
+      "hidden_dim": 128,
+      "num_layers": 2,
+      "dropout": 0.3
+    },
+    "fusion": {
+      "gnn_dim": 320,
+      "lstm_dim": 256,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "dropout": 0.4
+    }
+  },
+  "models_loaded": {
+    "gnn": true,
+    "lstm": true,
+    "fusion": true
+  },
+  "predictions": {
+    "gnn": {
+      "total": 203769,
+      "fraud_detected": 41716,
+      "fraud_rate": 0.20472201365271459
+    },
+    "fusion": {
+      "total": 1406,
+      "fraud_detected": 290,
+      "fraud_rate": 0.20625889046941678
+    }
+  },
+  "comparison": [
+    {
+      "Model": "FUSION",
+      "Accuracy": 0.748221906116643,
+      "Precision": 0.8,
+      "Recall": 0.4393939393939394,
+      "F1": 0.5672371638141809,
+      "AUC": 0.7290307689652791
+    },
+    {
+      "Model": "GNN",
+      "Accuracy": 0.5554765291607396,
+      "Precision": 0.3905191873589165,
+      "Recall": 0.32765151515151514,
+      "F1": 0.35633367662203913,
+      "AUC": 0.5249091858217713
+    }
+  ]
+}

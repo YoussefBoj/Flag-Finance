@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-11-07 16:59:20",
+  "selected_models": {
+    "gnn": [
+      "HybridGNN_L4_H320"
+    ],
+    "lstm": [
+      "BiLSTM_Attention",
+      "ResidualGRU",
+      "LSTM_CNN_Hybrid"
+    ]
+  },
+  "best_fusion_model": {
+    "name": "GatedFusion",
+    "metrics": {
+      "loss": 0.7511971812499197,
+      "accuracy": 0.748221906116643,
+      "precision": 0.8,
+      "recall": 0.4393939393939394,
+      "f1": 0.5672371638141809,
+      "auc": 0.7290307689652791,
+      "ap": 0.6855769201434063
+    },
+    "best_epoch": 1
+  }
+}

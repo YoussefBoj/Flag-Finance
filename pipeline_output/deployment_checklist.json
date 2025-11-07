@@ -1,0 +1,20 @@
+{
+  "models_loaded": {
+    "gnn": true,
+    "lstm": true,
+    "fusion": true
+  },
+  "data_processed": {
+    "graph_data": true,
+    "embeddings_available": true
+  },
+  "predictions_complete": {
+    "fusion": true,
+    "gnn": true
+  },
+  "performance_targets": {
+    "f1_above_0_5": true,
+    "auc_above_0_7": true,
+    "recall_above_0_6": false
+  }
+}

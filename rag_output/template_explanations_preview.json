@@ -1,0 +1,26 @@
+[
+  {
+    "transaction_id": 54885,
+    "true_label": 0,
+    "probability": 0.2,
+    "explanation": "This PAYMENT transaction of $490.78 appears LEGITIMATE with low confidence (fraud probability 20.00%). Transaction patterns align with normal behavior."
+  },
+  {
+    "transaction_id": 84682,
+    "true_label": 0,
+    "probability": 0.2,
+    "explanation": "This CASH_OUT transaction of $208,105.44 appears LEGITIMATE with low confidence (fraud probability 20.00%). Transaction patterns align with normal behavior."
+  },
+  {
+    "transaction_id": 11814,
+    "true_label": 0,
+    "probability": 0.2,
+    "explanation": "This CASH_OUT transaction of $53,318.61 appears LEGITIMATE with low confidence (fraud probability 20.00%). Transaction patterns align with normal behavior."
+  },
+  {
+    "transaction_id": 97973,
+    "true_label": 0,
+    "probability": 0.2,
+    "explanation": "This PAYMENT transaction of $7,251.34 appears LEGITIMATE with low confidence (fraud probability 20.00%). Transaction patterns align with normal behavior."
+  }
+]

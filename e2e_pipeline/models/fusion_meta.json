@@ -1,0 +1,6 @@
+{
+  "arch": "GatedFusion",
+  "GNN_DIM": 320,
+  "LSTM_DIM": 256,
+  "created_at": "2025-11-07T16:59:30.847856"
+}

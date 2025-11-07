@@ -1,0 +1,52 @@
+[
+  {
+    "sample_id": 47,
+    "true_label": 1,
+    "predicted_label": 1,
+    "fraud_probability": 0.9791477918624878,
+    "status": "CORRECT",
+    "gnn_prediction": 1,
+    "gnn_probability": 0.5880202054977417,
+    "explanation": "This PAYMENT transaction of $14,241.21 is flagged as FRAUD with high confidence (probability 97.91%). Key indicators: origin balance mismatch, destination balance mismatch."
+  },
+  {
+    "sample_id": 25,
+    "true_label": 1,
+    "predicted_label": 1,
+    "fraud_probability": 0.97891765832901,
+    "status": "CORRECT",
+    "gnn_prediction": 0,
+    "gnn_probability": 0.3951321542263031,
+    "explanation": "This CASH_OUT transaction of $6.57 is flagged as FRAUD with high confidence (probability 97.89%). Key indicators: origin balance mismatch, destination balance mismatch."
+  },
+  {
+    "sample_id": 852,
+    "true_label": 1,
+    "predicted_label": 1,
+    "fraud_probability": 0.9786377549171448,
+    "status": "CORRECT",
+    "gnn_prediction": 0,
+    "gnn_probability": 0.3030712902545929,
+    "explanation": "This TRANSFER transaction of $61,830.83 is flagged as FRAUD with high confidence (probability 97.86%). Key indicators: origin balance mismatch, destination balance mismatch."
+  },
+  {
+    "sample_id": 1279,
+    "true_label": 1,
+    "predicted_label": 1,
+    "fraud_probability": 0.9776715636253357,
+    "status": "CORRECT",
+    "gnn_prediction": 0,
+    "gnn_probability": 0.13673019409179688,
+    "explanation": "This CASH_OUT transaction of $97,252.66 is flagged as FRAUD with high confidence (probability 97.77%). Key indicators: origin balance mismatch."
+  },
+  {
+    "sample_id": 936,
+    "true_label": 1,
+    "predicted_label": 1,
+    "fraud_probability": 0.977064311504364,
+    "status": "CORRECT",
+    "gnn_prediction": 0,
+    "gnn_probability": 0.13712754845619202,
+    "explanation": "This CASH_OUT transaction of $81,067.66 is flagged as FRAUD with high confidence (probability 97.71%). Key indicators: origin balance mismatch, destination balance mismatch."
+  }
+]

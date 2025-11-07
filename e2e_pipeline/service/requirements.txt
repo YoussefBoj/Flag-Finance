@@ -1,0 +1,6 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.5
+torch>=2.2.0
+numpy
+pydantic<2
+requests
