@@ -74,3 +74,302 @@ logs/
 tmp/
 temp/
 *.tmp
+
+
+
+
+# =============================================================================
+# FLAG-Finance .gitignore
+# Comprehensive ignore patterns for Python ML/DL project with Docker deployment
+# =============================================================================
+
+# ============= Python Core =============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============= Virtual Environments =============
+venv/
+ENV/
+env/
+.venv
+rag_venv/
+ml_env/
+env.bak/
+venv.bak/
+
+# ============= Jupyter Notebooks =============
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.ipynb
+*.ipynb
+# Exception: Keep important notebooks if needed
+# !notebooks/important.ipynb
+
+# ============= IPython =============
+profile_default/
+ipython_config.py
+.ipython/
+
+# ============= Testing & Coverage =============
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.pytest_cache
+.nose*
+
+# ============= Data Files (Large/Temporary) =============
+# Raw data
+data/raw/**/*.csv
+data/raw/**/*.zip
+data/raw/**/*.tar.gz
+data/raw/**/*.7z
+!data/raw/.gitkeep
+
+# Processed data
+data/processed/**/*.csv
+data/processed/**/*.pkl
+data/processed/**/*.pickle
+data/processed/**/*.parquet
+data/processed/**/*.feather
+!data/processed/.gitkeep
+
+# Results
+data/results/**/*.pkl
+data/results/**/*.json
+!data/results/.gitkeep
+
+# ============= Model Files =============
+data/models/**/*.pt
+data/models/**/*.pth
+data/models/**/*.h5
+data/models/**/*.pkl
+data/models/**/*.onnx
+data/models/**/*.joblib
+data/graphs/**/*.pt
+data/graphs/**/*.pkl
+!data/models/.gitkeep
+!data/graphs/.gitkeep
+
+# ============= Embeddings & Vector DBs =============
+data/gnn_embeddings.pkl
+data/lstm_embeddings.pkl
+data/vector_db/
+data/sequence_generator.pkl
+!data/.gitkeep
+
+# ============= Logs & Output =============
+logs/
+*.log
+*.logs
+pipeline_output/
+rag_output/
+results/
+!logs/.gitkeep
+!results/.gitkeep
+
+# ============= IDE & Editor Files =============
+# VSCode
+.vscode/
+.vscode-server/
+*.code-workspace
+settings.json
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+.\#*
+.emacs.d/
+
+# Atom
+.atom/
+.tags*
+
+# General editors
+*.bak
+*.orig
+
+# ============= OS Files =============
+.DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+
+# ============= Environment & Config =============
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.dev
+.env.test
+config/secrets.json
+config/credentials.json
+secrets.yaml
+.aws/
+.credentials
+
+# ============= Docker Files (Optional - commit docker files!) =============
+# Uncomment if you want to exclude Docker artifacts
+# docker-compose.override.yml
+# .dockerignore
+
+# ============= Cloud & Deployment =============
+.terraform/
+*.tfstate
+*.tfstate.*
+.serverless/
+sam-tests/
+CloudFormation.json
+
+# ============= MLflow & Experiment Tracking =============
+mlruns/
+.mlflow
+
+# ============= Weights & Biases =============
+wandb/
+*.wandb
+
+# ============= DVC (Data Version Control) =============
+.dvc/
+.dvc.lock
+
+# ============= Build Artifacts =============
+build/
+dist/
+*.egg-info/
+*.whl
+*.tar.gz
+*.zip
+
+# ============= pip & Poetry =============
+pip-log.txt
+pip-delete-this-directory.txt
+poetry.lock
+Pipfile.lock
+
+# ============= mypy =============
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ============= Pyre =============
+.pyre/
+
+# ============= Black Formatter =============
+.black/
+
+# ============= isort =============
+.isort.cfg
+
+# ============= Linting & Code Quality =============
+.pylint
+.flake8
+.prospector/
+
+# ============= SQL Databases =============
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ============= Project Specific =============
+# Kaggle outputs
+submission.csv
+predictions.csv
+
+# Temporary experiment files
+experiments/*/
+temp/
+tmp/
+scratch/
+
+# Checkpoint files from training
+checkpoints/
+snapshots/
+
+# Cached datasets
+*.cache
+cache/
+
+# ============= Documentation =============
+site/
+docs/_build/
+.sphinx/
+
+# ============= Temporary Files =============
+*.tmp
+*.temp
+*.bak~
+.~*
+
+# ============= Node (if using any JS tools) =============
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ============= Package Manager Files =============
+.poetry
+poetry.lock
+Pipfile.lock
+
+# ============= Git LFS =============
+.gitattributes
+
+# ============= Large Binary Files =============
+*.tar
+*.gz
+*.rar
+*.exe
+

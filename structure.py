@@ -3,7 +3,7 @@ import sys
 
 # Directories to ignore (case-insensitive)
 IGNORE_DIRS = {
-    '.venv', 'venv', '.vscode', 'node_modules', '__pycache__', '.git',
+    '.venv', 'venv', '.vscode', 'node_modules', '__pycache__', '.git', 'rag_venv',
     '.idea', '.mypy_cache', '.pytest_cache', 'build', 'dist', '.tox'
 }
 
