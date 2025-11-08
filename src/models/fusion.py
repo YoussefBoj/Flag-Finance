@@ -177,77 +177,66 @@ class AttentionFusion(nn.Module):
 
 class CrossModalFusion(nn.Module):
     """
-    Advanced cross-modal fusion with bilinear pooling and residual connections.
-    Captures complex interactions between GNN and LSTM features.
+    Cross-modal fusion with bi-directional multi-head attention.
+    Matches the trained checkpoint architecture.
     """
-    
-    def __init__(
-        self,
-        gnn_dim: int,
-        lstm_dim: int,
-        hidden_dim: int = 256,
-        dropout: float = 0.3,
-        num_classes: int = 2
-    ):
+    def __init__(self, gnn_dim: int, lstm_dim: int, hidden_dim: int = 256, 
+                 num_heads: int = 4, num_classes: int = 2, dropout: float = 0.4):
         super().__init__()
         
-        # Projection layers
-        self.gnn_proj = nn.Linear(gnn_dim, hidden_dim)
-        self.lstm_proj = nn.Linear(lstm_dim, hidden_dim)
-        
-        # Bilinear pooling
-        self.bilinear = nn.Bilinear(hidden_dim, hidden_dim, hidden_dim)
-        
-        # Cross-attention
-        self.cross_attn_gnn = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, 1),
-            nn.Sigmoid()
+        # Projection layers with LayerNorm
+        self.gnn_proj = nn.Sequential(
+            nn.Linear(gnn_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim)
         )
         
-        self.cross_attn_lstm = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, 1),
-            nn.Sigmoid()
+        self.lstm_proj = nn.Sequential(
+            nn.Linear(lstm_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim)
         )
         
-        # Fusion MLP
-        self.fusion = nn.Sequential(
-            nn.Linear(hidden_dim * 3, hidden_dim),
+        # Bi-directional multi-head attention
+        self.gnn_to_lstm_attn = nn.MultiheadAttention(
+            hidden_dim, num_heads=num_heads, dropout=dropout, batch_first=True
+        )
+        
+        self.lstm_to_gnn_attn = nn.MultiheadAttention(
+            hidden_dim, num_heads=num_heads, dropout=dropout, batch_first=True
+        )
+        
+        # Layer normalization
+        self.norm1 = nn.LayerNorm(hidden_dim)
+        self.norm2 = nn.LayerNorm(hidden_dim)
+        
+        # Classifier
+        self.classifier = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.BatchNorm1d(hidden_dim // 2),
             nn.ReLU(),
-            nn.Dropout(dropout),
+            nn.Dropout(dropout * 0.7),
             nn.Linear(hidden_dim // 2, num_classes)
         )
-        
+    
     def forward(self, gnn_emb, lstm_emb):
-        # Project to same dimension
-        gnn_proj = F.relu(self.gnn_proj(gnn_emb))
-        lstm_proj = F.relu(self.lstm_proj(lstm_emb))
+        # Project embeddings
+        gnn_proj = self.gnn_proj(gnn_emb).unsqueeze(1)  # [B, 1, hidden_dim]
+        lstm_proj = self.lstm_proj(lstm_emb).unsqueeze(1)  # [B, 1, hidden_dim]
         
-        # Bilinear interaction
-        bilinear_feat = self.bilinear(gnn_proj, lstm_proj)
+        # Bi-directional cross-attention
+        gnn_attended, _ = self.gnn_to_lstm_attn(gnn_proj, lstm_proj, lstm_proj)
+        gnn_attended = self.norm1(gnn_attended.squeeze(1) + gnn_proj.squeeze(1))
         
-        # Cross-attention
-        concat = torch.cat([gnn_proj, lstm_proj], dim=1)
+        lstm_attended, _ = self.lstm_to_gnn_attn(lstm_proj, gnn_proj, gnn_proj)
+        lstm_attended = self.norm2(lstm_attended.squeeze(1) + lstm_proj.squeeze(1))
         
-        gnn_weight = self.cross_attn_gnn(concat)
-        lstm_weight = self.cross_attn_lstm(concat)
-        
-        gnn_attended = gnn_proj * gnn_weight
-        lstm_attended = lstm_proj * lstm_weight
-        
-        # Concatenate all features
-        fused = torch.cat([gnn_attended, lstm_attended, bilinear_feat], dim=1)
-        
-        # Classification
-        out = self.fusion(fused)
-        
-        return out
+        # Concatenate and classify
+        fused = torch.cat([gnn_attended, lstm_attended], dim=1)
+        return self.classifier(fused)
+
 
 
 def create_fusion_model(

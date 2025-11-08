@@ -59,6 +59,10 @@ class FraudDetectionPipeline:
         models_path = self.base_path / 'models'
         
         print(f'📦 Loading models from {models_path}...')
+        # Check if path exists
+        if not models_path.exists():
+            print(f"🔍 DEBUG: Models path does not exist: {models_path}")
+            raise FileNotFoundError("Models directory not found")
         
         # Load fusion model (includes GNN and LSTM)
         fusion_path = models_path / f'{fusion_model_name}_best.pt'
@@ -66,26 +70,26 @@ class FraudDetectionPipeline:
         if not fusion_path.exists():
             raise FileNotFoundError(f'Fusion model not found: {fusion_path}')
         
-        checkpoint = torch.load(fusion_path, map_location=self.device)
-        
-        # Initialize models
+        with torch.serialization.safe_globals(['numpy.core.multiarray.scalar']):
+            checkpoint = torch.load(fusion_path, map_location=self.device, weights_only=False)
+        # Initialize models with CORRECT dimensions from training
         self.gnn_model = create_gnn_model(
             model_name='deepsage',
             in_channels=100,
-            hidden_channels=384,
-            num_layers=6
+            hidden_channels=320,  # ← CHANGED from 384 to 320
+            num_layers=4          # ← CHANGED from 6 to 4 (from notebook)
         ).to(self.device)
         
         self.lstm_model = create_lstm_model(
-            model_name='bilstm',
-            input_size=20,
+            model_name='lstm_cnn',  # ← CHANGED to match training (LSTM-CNN Hybrid)
+            input_size=18,         # ← CHANGED from 20 to 18 (from notebook config)
             hidden_size=128,
-            num_layers=3
+            num_layers=2           # ← CHANGED from 3 to 2
         ).to(self.device)
         
         self.fusion_model = create_fusion_model(
             model_name='crossmodal',
-            gnn_dim=384,
+            gnn_dim=320,           # ← CHANGED from 384 to 320
             lstm_dim=256,
             hidden_dim=256
         ).to(self.device)
@@ -95,7 +99,7 @@ class FraudDetectionPipeline:
         self.fusion_model.eval()
         
         print(f'   ✅ Models loaded on {self.device}')
-    
+
     def _load_preprocessors(self):
         """Load feature scalers and encoders."""
         print('📦 Loading preprocessors...')

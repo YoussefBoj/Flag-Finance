@@ -8,11 +8,11 @@ from typing import Dict, List, Optional
 import os
 import json
 
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_community.llms import HuggingFaceHub
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
+from langchain_community.llms import HuggingFaceHub
 
 from src.rag.retriever import FraudCaseRetriever
 
@@ -20,12 +20,6 @@ from src.rag.retriever import FraudCaseRetriever
 class FraudExplainer:
     """
     Generate natural language explanations for fraud predictions using RAG.
-    
-    Features:
-    - Retrieval-augmented generation with case-based reasoning
-    - Multiple LLM backend support
-    - Structured explanation templates
-    - Confidence scoring
     """
     
     def __init__(
@@ -45,8 +39,15 @@ class FraudExplainer:
         # Create prompt template
         self.prompt_template = self._create_prompt_template()
         
-        # Create chain
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+        # Create chain using LCEL (modern approach)
+        if self.llm is not None:
+            self.chain = (
+                self.prompt_template 
+                | self.llm 
+                | StrOutputParser()
+            )
+        else:
+            self.chain = None
     
     def _init_llm(self, provider: str, model_name: Optional[str]):
         """Initialize LLM based on provider."""
@@ -75,7 +76,7 @@ class FraudExplainer:
             )
         
         elif provider == 'huggingface':
-            api_key = os.getenv('HUGGINGFACE_API_KEY')
+            api_key = os.getenv('HUGGINGFACEHUB_API_TOKEN')
             if not api_key:
                 print('⚠️  No HuggingFace API key found, using fallback template')
                 return None
@@ -147,14 +148,14 @@ Provide a clear, professional explanation for why this transaction was flagged a
         similar_cases_text = self._format_similar_cases(similar_cases)
         
         # Generate explanation
-        if self.llm is not None:
+        if self.chain is not None:
             try:
-                explanation = self.chain.run(
-                    transaction_details=transaction_details,
-                    fraud_probability=f"{fraud_probability:.2f}",
-                    prediction=prediction,
-                    similar_cases=similar_cases_text
-                )
+                explanation = self.chain.invoke({
+                    "transaction_details": transaction_details,
+                    "fraud_probability": f"{fraud_probability:.2f}",
+                    "prediction": prediction,
+                    "similar_cases": similar_cases_text
+                })
             except Exception as e:
                 print(f'⚠️  LLM error: {e}')
                 explanation = self._generate_template_explanation(
