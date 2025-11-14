@@ -129,7 +129,7 @@ async def startup_event():
         pipeline = FraudDetectionPipeline(
             base_path=base_path,
             device='cuda' if torch.cuda.is_available() else 'cpu',
-            enable_rag=False  # ← Disable RAG temporarily
+            enable_rag=True  # ← Disable RAG temporarily
         )
         
         logger.info(f"✅ Pipeline initialized on {pipeline.device}")

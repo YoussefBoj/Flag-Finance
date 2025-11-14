@@ -1,6 +1,6 @@
 """
-RAG retrieval system for fraud case similarity search
-Uses FAISS vector database with sentence transformers
+Fixed RAG retrieval system for fraud case similarity search
+Handles tuple indexing errors and backward compatibility
 """
 
 from pathlib import Path
@@ -12,18 +12,12 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import faiss
-from tqdm import tqdm
 
 
 class FraudCaseRetriever:
     """
     Vector-based retrieval system for fraud cases.
-    
-    Features:
-    - FAISS vector database for fast similarity search
-    - Sentence transformer embeddings
-    - Case indexing with metadata
-    - Top-k retrieval with scores
+    Fixed version with proper error handling.
     """
     
     def __init__(
@@ -51,7 +45,7 @@ class FraudCaseRetriever:
         
         self.cases: List[Dict] = []
         self.case_texts: List[str] = []
-        
+    
     def create_case_text(self, case: Dict) -> str:
         """
         Convert fraud case metadata to text description.
@@ -98,11 +92,7 @@ class FraudCaseRetriever:
         
         return ". ".join(text_parts) + "."
     
-    def build_index(
-        self,
-        cases: List[Dict],
-        save_path: Optional[Path] = None
-    ):
+    def build_index(self, cases: List[Dict], save_path: Optional[Path] = None):
         """
         Build FAISS index from fraud cases.
         
@@ -115,7 +105,8 @@ class FraudCaseRetriever:
         self.cases = cases
         
         # Convert cases to text
-        self.case_texts = [self.create_case_text(case) for case in tqdm(cases, desc='Creating case texts')]
+        print('   Creating case texts...')
+        self.case_texts = [self.create_case_text(case) for case in cases]
         
         # Generate embeddings
         print('   Encoding cases...')
@@ -140,11 +131,7 @@ class FraudCaseRetriever:
         if save_path:
             self.save_index(save_path)
     
-    def retrieve(
-        self,
-        query_case: Dict,
-        top_k: int = 3
-    ) -> List[Tuple[Dict, float]]:
+    def retrieve(self, query_case: Dict, top_k: int = 3) -> List[Tuple[Dict, float]]:
         """
         Retrieve similar fraud cases.
         
@@ -181,35 +168,136 @@ class FraudCaseRetriever:
         # Save FAISS index
         faiss.write_index(self.index, str(save_path / 'index.faiss'))
         
-        # Save metadata
+        # Save metadata with proper structure
         metadata = {
             'cases': self.cases,
             'case_texts': self.case_texts,
             'embedding_model': self.embedding_model_name,
             'dimension': self.dimension,
-            'index_type': self.index_type
+            'index_type': self.index_type,
+            'num_cases': len(self.cases)
         }
         
-        with open(save_path / 'index.pkl', 'wb') as f:
+        with open(save_path / 'metadata.pkl', 'wb') as f:
             pickle.dump(metadata, f)
+        
+        # Also save as JSON for inspection
+        json_metadata = {
+            'embedding_model': self.embedding_model_name,
+            'dimension': self.dimension,
+            'index_type': self.index_type,
+            'num_cases': len(self.cases),
+            'sample_case': self.cases[0] if self.cases else None
+        }
+        
+        with open(save_path / 'info.json', 'w') as f:
+            json.dump(json_metadata, f, indent=2)
         
         print(f'   💾 Index saved to {save_path}')
     
     def load_index(self, load_path: Path):
-        """Load FAISS index and metadata."""
+        """
+        Load FAISS index and metadata with error handling.
+        
+        Args:
+            load_path: Path to saved index directory
+        """
         load_path = Path(load_path)
         
+        if not load_path.exists():
+            raise FileNotFoundError(f"Index directory not found: {load_path}")
+        
         # Load FAISS index
-        self.index = faiss.read_index(str(load_path / 'index.faiss'))
+        index_file = load_path / 'index.faiss'
+        if not index_file.exists():
+            raise FileNotFoundError(f"FAISS index not found: {index_file}")
         
-        # Load metadata
-        with open(load_path / 'index.pkl', 'rb') as f:
-            metadata = pickle.load(f)
+        self.index = faiss.read_index(str(index_file))
         
-        self.cases = metadata['cases']
-        self.case_texts = metadata['case_texts']
+        # Try to load metadata with fallback
+        metadata_file = load_path / 'metadata.pkl'
+        legacy_file = load_path / 'index.pkl'  # Old format
         
-        print(f'   ✅ Loaded index with {self.index.ntotal} vectors')
+        metadata = None
+        
+        # Try new format first
+        if metadata_file.exists():
+            try:
+                with open(metadata_file, 'rb') as f:
+                    metadata = pickle.load(f)
+                print(f'   ✅ Loaded metadata from {metadata_file}')
+            except Exception as e:
+                print(f'   ⚠️  Failed to load new metadata format: {e}')
+        
+        # Fallback to legacy format
+        if metadata is None and legacy_file.exists():
+            try:
+                with open(legacy_file, 'rb') as f:
+                    legacy_data = pickle.load(f)
+                
+                # Handle different legacy formats
+                if isinstance(legacy_data, dict):
+                    # Check if it's the old tuple-based format
+                    if 'cases' in legacy_data and isinstance(legacy_data['cases'], list):
+                        if legacy_data['cases'] and isinstance(legacy_data['cases'][0], tuple):
+                            # Old format: list of tuples
+                            print('   ℹ️  Converting from legacy tuple format...')
+                            cases = []
+                            case_texts = []
+                            for item in legacy_data['cases']:
+                                if isinstance(item, tuple) and len(item) >= 2:
+                                    case_dict = item[0] if isinstance(item[0], dict) else {}
+                                    case_text = item[1] if len(item) > 1 else ""
+                                    cases.append(case_dict)
+                                    case_texts.append(case_text)
+                                elif isinstance(item, dict):
+                                    cases.append(item)
+                                    case_texts.append(self.create_case_text(item))
+                            
+                            metadata = {
+                                'cases': cases,
+                                'case_texts': case_texts,
+                                'embedding_model': legacy_data.get('embedding_model', self.embedding_model_name),
+                                'dimension': legacy_data.get('dimension', self.dimension),
+                                'index_type': legacy_data.get('index_type', self.index_type)
+                            }
+                        else:
+                            # New dict format
+                            metadata = legacy_data
+                    else:
+                        metadata = legacy_data
+                
+                print(f'   ✅ Loaded and converted legacy metadata')
+                
+            except Exception as e:
+                print(f'   ⚠️  Failed to load legacy metadata: {e}')
+        
+        # If still no metadata, create minimal structure
+        if metadata is None:
+            print('   ⚠️  No metadata found, creating minimal structure')
+            num_vectors = self.index.ntotal
+            self.cases = [{'case_id': i, 'description': f'Case {i}'} for i in range(num_vectors)]
+            self.case_texts = [f'Case {i}' for i in range(num_vectors)]
+            print(f'   ℹ️  Created {num_vectors} placeholder cases')
+            return
+        
+        # Extract metadata
+        self.cases = metadata.get('cases', [])
+        self.case_texts = metadata.get('case_texts', [])
+        
+        # Validate consistency
+        if len(self.cases) != self.index.ntotal:
+            print(f'   ⚠️  Warning: {len(self.cases)} cases but {self.index.ntotal} vectors')
+            # Pad or truncate
+            if len(self.cases) < self.index.ntotal:
+                for i in range(len(self.cases), self.index.ntotal):
+                    self.cases.append({'case_id': i, 'description': f'Case {i}'})
+                    self.case_texts.append(f'Case {i}')
+            else:
+                self.cases = self.cases[:self.index.ntotal]
+                self.case_texts = self.case_texts[:self.index.ntotal]
+        
+        print(f'   ✅ Loaded index with {self.index.ntotal} vectors and {len(self.cases)} cases')
 
 
 def build_fraud_case_database(
@@ -234,7 +322,14 @@ def build_fraud_case_database(
     
     # Load data
     if dataset == 'paysim':
-        df = pd.read_csv(data_path / 'processed' / 'paysim_data_enhanced.csv')
+        processed_file = data_path / 'processed' / 'paysim_sample_enhanced.csv'
+        if not processed_file.exists():
+            processed_file = data_path / 'processed' / 'paysim_data_enhanced.csv'
+        
+        if not processed_file.exists():
+            raise FileNotFoundError(f"PaySim data not found at {processed_file}")
+        
+        df = pd.read_csv(processed_file)
         fraud_df = df[df['isFraud'] == 1].head(n_cases)
         
         cases = []
@@ -251,7 +346,12 @@ def build_fraud_case_database(
             cases.append(case)
     
     elif dataset == 'elliptic':
-        df = pd.read_csv(data_path / 'processed' / 'elliptic_nodes_enhanced.csv')
+        processed_file = data_path / 'processed' / 'elliptic_nodes_enhanced.csv'
+        
+        if not processed_file.exists():
+            raise FileNotFoundError(f"Elliptic data not found at {processed_file}")
+        
+        df = pd.read_csv(processed_file)
         fraud_df = df[df['class'] == 2].head(n_cases)
         
         cases = []
@@ -283,26 +383,39 @@ def build_fraud_case_database(
 if __name__ == '__main__':
     from pathlib import Path
     
+    # Example: Build database
     base_path = Path(__file__).parent.parent.parent / 'data'
     
-    # Build database
-    retriever = build_fraud_case_database(
-        data_path=base_path,
-        dataset='paysim',
-        n_cases=500
-    )
+    print("Building fraud case database...")
+    print("This will create a vector database for RAG explanations.")
+    print()
     
-    # Test retrieval
-    test_case = {
-        'amount': 5000.0,
-        'type': 'TRANSFER',
-        'hour': 3,
-        'is_night': True,
-        'balance_error_orig': 500.0
-    }
-    
-    results = retriever.retrieve(test_case, top_k=3)
-    
-    print(f'\n🔍 Retrieved {len(results)} similar cases:')
-    for i, (case, score) in enumerate(results, 1):
-        print(f'   {i}. Score: {score:.3f} | Amount: ${case["amount"]:.2f}')
+    try:
+        retriever = build_fraud_case_database(
+            data_path=base_path,
+            dataset='paysim',
+            n_cases=500
+        )
+        
+        # Test retrieval
+        test_case = {
+            'amount': 5000.0,
+            'type': 'TRANSFER',
+            'hour': 3,
+            'is_night': True,
+            'balance_error_orig': 500.0
+        }
+        
+        print('\n🔍 Testing retrieval...')
+        results = retriever.retrieve(test_case, top_k=3)
+        
+        print(f'\nRetrieved {len(results)} similar cases:')
+        for i, (case, score) in enumerate(results, 1):
+            print(f'   {i}. Score: {score:.3f} | Amount: ${case.get("amount", 0):.2f}')
+        
+        print('\n✅ Database built successfully!')
+        
+    except FileNotFoundError as e:
+        print(f'\n❌ Error: {e}')
+        print('\nPlease ensure you have processed the PaySim data first.')
+        print('Run: python src/data/ingest.py')

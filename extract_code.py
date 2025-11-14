@@ -12,16 +12,29 @@ def extract_code_from_folder(root_path, output_file='extracted_code.txt'):
     
     # File extensions to include
     code_extensions = {
-        '.js', '.jsx', '.py', '.json', '.env', '.css', '.html', 
-        '.md', '.txt', '.gitignore', '.example'
+        '.py','.env', '.yml', '.yaml'
     }
     
     # Files/folders to exclude
-    exclude_dirs = {'node_modules', '.git', 'dist', 'build', '__pycache__', 'rag_venv', '.venv' }
-    exclude_files = {'package-lock.json', '.DS_Store'}
+    exclude_dirs = {'node_modules', '.git', 'dist', 'build', '__pycache__', 'rag_venv', '.venv'}
+    exclude_files = {
+        'package-lock.json', '.DS_Store',
+        'extract_code.py', 'project_structure.txt',
+        'rag_requirements.txt', 'requirements.txt', 'structure.py', 
+        '.gitignore', 'GatedFusion_test_predictions.json', 
+        'training_histories.json', 'training_histories_kaggle.json', 
+        'lstm_training_histories.json', 'kaggle_session_tracking.json', 
+        'fraud_cases_database.json', 'elliptic_id2idx.json', 
+        'UltraDeepSAGE_L8_H352_history.json', 
+        'HybridGNN_L4_H320_history.json', 
+        'DeepSAGE_L7_H400_history.json', 'DeepSAGE_L6_H384_history.json'
+    }
     
     # Files that should not be displayed (sensitive)
     sensitive_files = {'.env', 'firebase-adminsdk'}
+    
+    # Files with no extensions but should be included
+    special_files = {'Dockerfile', 'docker-compose.yml'}
     
     extracted_files = []
     
@@ -45,7 +58,7 @@ def extract_code_from_folder(root_path, output_file='extracted_code.txt'):
             _, ext = os.path.splitext(filename)
             
             # Check if file should be processed
-            if ext in code_extensions or filename in ['.gitignore', '.env.example']:
+            if ext in code_extensions or filename in special_files or filename in ['.gitignore', '.env.example']:
                 file_path = os.path.join(dirpath, filename)
                 rel_path = os.path.join(rel_dir, filename).replace('\\', '/')
                 
@@ -111,7 +124,7 @@ def create_project_structure(root_path, output_file='project_structure.txt'):
         root_path: Root directory path to scan
         output_file: Output file name
     """
-    exclude_dirs = {'node_modules', '.git', 'dist', 'build', '__pycache__'}
+    exclude_dirs = {'node_modules', '.git', 'dist', 'build', '__pycache__', 'rag_venv', '.venv'}
     
     tree_lines = []
     
@@ -150,7 +163,7 @@ def create_project_structure(root_path, output_file='project_structure.txt'):
 
 if __name__ == "__main__":
     # Set your project path here
-    project_path = r"C:\Users\youss\Downloads\xr_app\ar-fittry-app"
+    project_path = r"C:\Users\youss\Downloads\Flag_finance"
     
     print("CODE EXTRACTOR")
     print("=" * 80)

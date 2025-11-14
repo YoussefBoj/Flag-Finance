@@ -122,10 +122,64 @@ Provide a clear, professional explanation for why this transaction was flagged a
     def explain_prediction(
         self,
         transaction: Dict,
-        fraud_probability: float,
-        prediction: str,
+        prediction: int,
+        fraud_probability: float,  
+        confidence: Optional[str] = None,
         top_k: int = 3
-    ) -> Dict:
+    ) -> str:
+        """Generate explanation for fraud prediction."""
+        
+        # Determine confidence if not provided
+        if confidence is None:
+            if fraud_probability >= 0.8 or fraud_probability <= 0.2:
+                confidence = "HIGH"
+            elif fraud_probability >= 0.6 or fraud_probability <= 0.4:
+                confidence = "MEDIUM"
+            else:
+                confidence = "LOW"
+        
+        # Build basic explanation
+        tx_type = transaction.get('type', 'UNKNOWN')
+        amount = transaction.get('amount', 0.0)
+        
+        if prediction == 1:
+            # Fraud explanation
+            signals = []
+            if abs(transaction.get('balance_error_orig', 0)) > 0:
+                signals.append("origin balance mismatch")
+            if abs(transaction.get('balance_error_dest', 0)) > 0:
+                signals.append("destination balance mismatch")
+            if transaction.get('isFlaggedFraud', 0) == 1:
+                signals.append("system flag")
+            if transaction.get('is_night', False):
+                signals.append("late-night transaction")
+            
+            if not signals:
+                signals.append("pattern anomalies detected by ML models")
+            
+            explanation = (
+                f"This {tx_type} transaction of ${amount:,.2f} is classified as FRAUD "
+                f"with {confidence} confidence ({fraud_probability*100:.1f}% probability). "
+                f"Key risk indicators: {', '.join(signals)}."
+            )
+        else:
+            # Legitimate explanation
+            explanation = (
+                f"This {tx_type} transaction of ${amount:,.2f} appears LEGITIMATE "
+                f"with {confidence} confidence ({(1-fraud_probability)*100:.1f}% probability). "
+                f"Transaction patterns align with normal behavior."
+            )
+        
+        # Add similar cases if retriever available
+        if self.retriever:
+            try:
+                similar_cases = self.retriever.retrieve(transaction, top_k=top_k)
+                if similar_cases:
+                    explanation += f"\n\nFound {len(similar_cases)} similar historical fraud cases."
+            except Exception as e:
+                print(f"Retrieval failed: {e}")
+        
+        return explanation
         """
         Generate explanation for a fraud prediction.
         
