@@ -42,7 +42,10 @@ app.add_middleware(
 pipeline: Optional[FraudDetectionPipeline] = None
 
 
-# Pydantic models for request/response
+# ============================================================================
+# Pydantic Models
+# ============================================================================
+
 class TransactionInput(BaseModel):
     """Input schema for single transaction prediction."""
     
@@ -114,7 +117,10 @@ class HealthResponse(BaseModel):
     version: str
 
 
-# API endpoints
+# ============================================================================
+# API Endpoints
+# ============================================================================
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize pipeline on startup."""
@@ -129,13 +135,14 @@ async def startup_event():
         pipeline = FraudDetectionPipeline(
             base_path=base_path,
             device='cuda' if torch.cuda.is_available() else 'cpu',
-            enable_rag=True  # ← Disable RAG temporarily
+            enable_rag=True  # ✅ Enable RAG for LLM explanations
         )
         
         logger.info(f"✅ Pipeline initialized on {pipeline.device}")
         logger.info(f"   GNN model: {pipeline.gnn_model.__class__.__name__}")
         logger.info(f"   LSTM model: {pipeline.lstm_model.__class__.__name__}")
         logger.info(f"   Fusion model: {pipeline.fusion_model.__class__.__name__}")
+        logger.info(f"   RAG enabled: {pipeline.explainer is not None}")
         
     except Exception as e:
         logger.error(f"❌ Failed to initialize pipeline: {e}")
@@ -153,6 +160,7 @@ async def root():
             "health": "/health",
             "predict": "/predict",
             "batch_predict": "/batch_predict",
+            "models_info": "/models/info",
             "docs": "/docs"
         }
     }
@@ -247,20 +255,26 @@ async def get_model_info():
             "parameters": sum(p.numel() for p in pipeline.fusion_model.parameters())
         },
         "device": str(pipeline.device),
-        "rag_enabled": pipeline.explainer is not None
+        "rag_enabled": pipeline.explainer is not None,
+        "explainer_backend": getattr(pipeline.explainer, 'llm_backend', 'template') if pipeline.explainer else None
     }
 
 
 @app.get("/statistics")
 async def get_statistics():
     """Get API usage statistics."""
-    # In production, implement proper tracking
+    # In production, implement proper tracking with Redis/DB
     return {
         "total_predictions": 0,
         "fraud_detected": 0,
-        "average_response_time_ms": 0
+        "average_response_time_ms": 0,
+        "api_version": "1.0.0"
     }
 
+
+# ============================================================================
+# Main Entry Point
+# ============================================================================
 
 if __name__ == "__main__":
     import uvicorn

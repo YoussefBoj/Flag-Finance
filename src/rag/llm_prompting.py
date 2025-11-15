@@ -1,6 +1,6 @@
 """
 LLM-based fraud explanation generation using RAG
-Supports multiple LLM backends: OpenAI, HuggingFace, Anthropic
+Supports OpenAI → Perplexity → Local Phi fallback chain
 """
 
 from pathlib import Path
@@ -16,6 +16,187 @@ from langchain_community.llms import HuggingFaceHub
 
 from src.rag.retriever import FraudCaseRetriever
 
+
+# ============================================================================
+# Production Fraud Explainer with OpenAI → Perplexity → Phi Fallback
+# ============================================================================
+
+class ProductionFraudExplainer:
+    """Production-ready fraud explainer with OpenAI → Perplexity → Phi fallback."""
+    
+    def __init__(
+        self,
+        retriever=None,
+        use_llm: bool = False,
+        openai_key: Optional[str] = None,
+        perplexity_key: Optional[str] = None,
+        local_model: Optional[str] = None,
+        model_kwargs: Optional[Dict] = None,
+        generation_kwargs: Optional[Dict] = None
+    ):
+        self.retriever = retriever
+        self.llm = None
+        self.llm_error = None
+        self.requested_llm = use_llm
+        self.openai_key = openai_key or os.getenv('OPENAI_API_KEY')
+        self.perplexity_key = perplexity_key or os.getenv('PERPLEXITY_API_KEY')
+        self.local_model = local_model
+        self.model_kwargs = model_kwargs or {}
+        self.generation_kwargs = generation_kwargs or {'max_new_tokens': 220, 'temperature': 0.3}
+        self.llm_backend = None
+    
+        if not use_llm:
+            self.use_llm = False
+            return
+    
+        # Try OpenAI first
+        if self.openai_key:
+            try:
+                from langchain_openai import OpenAI
+                self.llm = OpenAI(temperature=0.3, api_key=self.openai_key)
+                self.llm_backend = 'openai'
+                self.use_llm = True
+                print('✅ OpenAI LLM initialized')
+                return
+            except Exception as exc:
+                self.llm_error = str(exc)
+                print(f'⚠️ OpenAI initialization failed: {exc}')
+    
+        # Try Perplexity second
+        if self.perplexity_key:
+            try:
+                from langchain_community.chat_models import ChatPerplexity
+                self.llm = ChatPerplexity(
+                    api_key=self.perplexity_key,
+                    temperature=0.3,
+                    model="sonar-reasoning"
+                )
+                self.llm_backend = 'perplexity'
+                self.use_llm = True
+                print('✅ Perplexity LLM initialized')
+                return
+            except Exception as exc:
+                self.llm_error = str(exc)
+                print(f'⚠️ Perplexity initialization failed: {exc}')
+    
+        # Try local model last
+        if self.local_model:
+            try:
+                from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+                print(f'🚀 Loading local model: {self.local_model}')
+                tokenizer = AutoTokenizer.from_pretrained(self.local_model, trust_remote_code=True)
+                model = AutoModelForCausalLM.from_pretrained(self.local_model, **self.model_kwargs)
+                self.llm = pipeline('text-generation', model=model, tokenizer=tokenizer, pad_token_id=tokenizer.eos_token_id)
+                self.llm_backend = 'huggingface-pipeline'
+                self.use_llm = True
+                print('✅ Local LLM initialized')
+                return
+            except Exception as exc:
+                self.llm_error = str(exc)
+                print(f'⚠️ Local LLM initialization failed: {exc}')
+    
+        self.use_llm = False
+        print("⚠️ No valid LLM backend available, using templates only.")
+
+    def explain_prediction(
+        self,
+        transaction: Dict,
+        prediction: int,
+        fraud_probability: float,
+        confidence: Optional[str] = None,
+        top_k: int = 3
+    ) -> str:
+        """Generate explanation with LLM fallback chain."""
+        
+        # Determine confidence
+        if confidence is None:
+            if fraud_probability >= 0.8 or fraud_probability <= 0.2:
+                confidence = "HIGH"
+            elif fraud_probability >= 0.6 or fraud_probability <= 0.4:
+                confidence = "MEDIUM"
+            else:
+                confidence = "LOW"
+        
+        tx_type = transaction.get('type', 'UNKNOWN')
+        amount = transaction.get('amount', 0.0)
+        
+        # Try LLM generation with fallback
+        if self.use_llm and self.llm:
+            try:
+                # Build prompt
+                prompt = f"Explain why this {tx_type} transaction of ${amount:.2f} is {'fraud' if prediction == 1 else 'legitimate'} with {fraud_probability*100:.1f}% probability. Be concise (2-3 sentences)."
+                
+                if self.llm_backend == 'huggingface-pipeline':
+                    result = self.llm(prompt, **self.generation_kwargs)[0]['generated_text']
+                    return result[len(prompt):].strip() or result.strip()
+                
+                if hasattr(self.llm, 'invoke'):
+                    response = self.llm.invoke(prompt)
+                    if hasattr(response, 'content'):
+                        return response.content
+                    return str(response)
+            
+            except Exception as exc:
+                error_message = str(exc)
+                print(f'⚠️ LLM generation failed: {error_message}')
+                
+                # OpenAI quota exceeded? Try Perplexity
+                if self.llm_backend == "openai" and ("quota" in error_message.lower() or "429" in error_message):
+                    print("⚠️ OpenAI quota exceeded. Trying Perplexity...")
+                    if self.perplexity_key:
+                        try:
+                            from langchain_community.chat_models import ChatPerplexity
+                            self.llm = ChatPerplexity(
+                                api_key=self.perplexity_key,
+                                temperature=0.3,
+                                model="sonar-reasoning"
+                            )
+                            self.llm_backend = 'perplexity'
+                            self.use_llm = True
+                            print('✅ Switched to Perplexity')
+                            return self.explain_prediction(transaction, prediction, fraud_probability, confidence, top_k)
+                        except Exception as per_exc:
+                            print(f"⚠️ Perplexity failed: {per_exc}")
+                
+                # Try local model
+                if self.local_model and self.llm_backend in ["openai", "perplexity", None]:
+                    print("⚠️ Trying local Phi model...")
+                    try:
+                        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+                        tokenizer = AutoTokenizer.from_pretrained(self.local_model, trust_remote_code=True)
+                        model = AutoModelForCausalLM.from_pretrained(self.local_model, **self.model_kwargs)
+                        self.llm = pipeline('text-generation', model=model, tokenizer=tokenizer, pad_token_id=tokenizer.eos_token_id)
+                        self.llm_backend = 'huggingface-pipeline'
+                        self.use_llm = True
+                        print('✅ Switched to local Phi')
+                        return self.explain_prediction(transaction, prediction, fraud_probability, confidence, top_k)
+                    except Exception as local_exc:
+                        print(f"⚠️ Local model failed: {local_exc}")
+        
+        # Template fallback
+        if prediction == 1:
+            signals = []
+            if abs(transaction.get('balance_error_orig', 0)) > 0:
+                signals.append("origin balance mismatch")
+            if abs(transaction.get('balance_error_dest', 0)) > 0:
+                signals.append("destination balance mismatch")
+            if transaction.get('isFlaggedFraud', 0) == 1:
+                signals.append("system flag")
+            if not signals:
+                signals.append("pattern anomalies")
+            
+            return (f"This {tx_type} transaction of ${amount:,.2f} is flagged as "
+                   f"FRAUD with {confidence} confidence ({fraud_probability*100:.1f}% probability). "
+                   f"Key indicators: {', '.join(signals)}.")
+        else:
+            return (f"This {tx_type} transaction of ${amount:,.2f} appears LEGITIMATE "
+                   f"with {confidence} confidence ({(1-fraud_probability)*100:.1f}% probability). "
+                   f"Transaction patterns align with normal behavior.")
+
+
+# ============================================================================
+# Advanced RAG-based Fraud Explainer (Original Implementation)
+# ============================================================================
 
 class FraudExplainer:
     """
@@ -180,141 +361,14 @@ Provide a clear, professional explanation for why this transaction was flagged a
                 print(f"Retrieval failed: {e}")
         
         return explanation
-        """
-        Generate explanation for a fraud prediction.
-        
-        Args:
-            transaction: Transaction metadata dictionary
-            fraud_probability: Model's fraud probability (0-100)
-            prediction: 'FRAUD' or 'LEGIT'
-            top_k: Number of similar cases to retrieve
-            
-        Returns:
-            Dictionary with explanation and metadata
-        """
-        # Retrieve similar cases
-        similar_cases = self.retriever.retrieve(transaction, top_k=top_k)
-        
-        # Format transaction details
-        transaction_details = self._format_transaction(transaction)
-        
-        # Format similar cases
-        similar_cases_text = self._format_similar_cases(similar_cases)
-        
-        # Generate explanation
-        if self.chain is not None:
-            try:
-                explanation = self.chain.invoke({
-                    "transaction_details": transaction_details,
-                    "fraud_probability": f"{fraud_probability:.2f}",
-                    "prediction": prediction,
-                    "similar_cases": similar_cases_text
-                })
-            except Exception as e:
-                print(f'⚠️  LLM error: {e}')
-                explanation = self._generate_template_explanation(
-                    transaction, fraud_probability, similar_cases
-                )
-        else:
-            # Fallback to template-based explanation
-            explanation = self._generate_template_explanation(
-                transaction, fraud_probability, similar_cases
-            )
-        
-        return {
-            'explanation': explanation.strip(),
-            'fraud_probability': fraud_probability,
-            'prediction': prediction,
-            'similar_cases': [
-                {'case': case, 'similarity': score}
-                for case, score in similar_cases
-            ],
-            'transaction': transaction
-        }
-    
-    def _format_transaction(self, transaction: Dict) -> str:
-        """Format transaction details as text."""
-        parts = []
-        
-        if 'amount' in transaction:
-            parts.append(f"Amount: ${transaction['amount']:.2f}")
-        if 'type' in transaction:
-            parts.append(f"Type: {transaction['type']}")
-        if 'hour' in transaction:
-            parts.append(f"Time: {transaction['hour']}:00")
-        if 'out_degree' in transaction:
-            parts.append(f"Network connections: {transaction['out_degree']}")
-        
-        return ", ".join(parts)
-    
-    def _format_similar_cases(self, similar_cases: List) -> str:
-        """Format similar cases as text."""
-        if not similar_cases:
-            return "No similar cases found."
-        
-        texts = []
-        for i, (case, score) in enumerate(similar_cases, 1):
-            case_text = f"Case {i} (similarity: {score:.2f}): "
-            if 'amount' in case:
-                case_text += f"${case['amount']:.2f} transaction"
-            if 'type' in case:
-                case_text += f", {case['type']}"
-            if 'pattern' in case:
-                case_text += f" - {case['pattern']}"
-            texts.append(case_text)
-        
-        return "\n".join(texts)
-    
-    def _generate_template_explanation(
-        self,
-        transaction: Dict,
-        fraud_probability: float,
-        similar_cases: List
-    ) -> str:
-        """Generate rule-based explanation when LLM is unavailable."""
-        reasons = []
-        
-        # High probability
-        if fraud_probability > 80:
-            reasons.append("extremely high fraud probability")
-        elif fraud_probability > 60:
-            reasons.append("high fraud probability")
-        
-        # Amount-based
-        if 'amount' in transaction and transaction['amount'] > 10000:
-            reasons.append("unusually large transaction amount")
-        
-        # Temporal
-        if transaction.get('is_night', False):
-            reasons.append("transaction occurred during high-risk hours")
-        
-        # Balance discrepancy
-        if 'balance_error_orig' in transaction and abs(transaction['balance_error_orig']) > 100:
-            reasons.append("significant balance discrepancy detected")
-        
-        # Network anomaly
-        if 'out_degree' in transaction and transaction['out_degree'] > 10:
-            reasons.append("abnormal network activity pattern")
-        
-        # Similar cases
-        if similar_cases and len(similar_cases) > 0:
-            avg_similarity = sum(score for _, score in similar_cases) / len(similar_cases)
-            if avg_similarity > 0.8:
-                reasons.append(f"strong similarity to {len(similar_cases)} known fraud cases")
-        
-        # Construct explanation
-        if reasons:
-            explanation = f"This transaction was flagged as fraud due to: {', '.join(reasons)}. "
-        else:
-            explanation = "This transaction exhibits patterns consistent with fraudulent behavior. "
-        
-        explanation += f"The model assigns a {fraud_probability:.1f}% fraud probability based on learned patterns from historical data."
-        
-        return explanation
 
+
+# ============================================================================
+# Batch Processing
+# ============================================================================
 
 def generate_batch_explanations(
-    explainer: FraudExplainer,
+    explainer,
     predictions: List[Dict],
     save_path: Optional[Path] = None
 ) -> List[Dict]:
@@ -322,7 +376,7 @@ def generate_batch_explanations(
     Generate explanations for batch of predictions.
     
     Args:
-        explainer: FraudExplainer instance
+        explainer: FraudExplainer or ProductionFraudExplainer instance
         predictions: List of prediction dictionaries
         save_path: Optional path to save explanations
         
@@ -355,6 +409,14 @@ def generate_batch_explanations(
     return explanations
 
 
+# Export classes for easy import
+__all__ = ['FraudExplainer', 'ProductionFraudExplainer', 'generate_batch_explanations']
+
+
+# ============================================================================
+# Test/Demo Code
+# ============================================================================
+
 if __name__ == '__main__':
     from pathlib import Path
     from src.rag.retriever import build_fraud_case_database
@@ -382,9 +444,9 @@ if __name__ == '__main__':
     
     result = explainer.explain_prediction(
         transaction=test_transaction,
-        fraud_probability=92.5,
-        prediction='FRAUD'
+        fraud_probability=0.925,  # Note: now 0-1 range
+        prediction=1
     )
     
     print(f'\n📝 Explanation:')
-    print(result['explanation'])
+    print(result)

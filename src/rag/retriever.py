@@ -1,6 +1,7 @@
 """
 Fixed RAG retrieval system for fraud case similarity search
 Handles tuple indexing errors and backward compatibility
+Production-ready with robust error handling
 """
 
 from pathlib import Path
@@ -17,7 +18,7 @@ import faiss
 class FraudCaseRetriever:
     """
     Vector-based retrieval system for fraud cases.
-    Fixed version with proper error handling.
+    Fixed version with proper error handling and backward compatibility.
     """
     
     def __init__(
@@ -275,6 +276,7 @@ class FraudCaseRetriever:
         # If still no metadata, create minimal structure
         if metadata is None:
             print('   ⚠️  No metadata found, creating minimal structure')
+            print('   ℹ️  Consider rebuilding the vector DB using: python rebuild_vectordb.py')
             num_vectors = self.index.ntotal
             self.cases = [{'case_id': i, 'description': f'Case {i}'} for i in range(num_vectors)]
             self.case_texts = [f'Case {i}' for i in range(num_vectors)]
@@ -378,6 +380,10 @@ def build_fraud_case_database(
         retriever.save_index(save_path)
     
     return retriever
+
+
+# Export for easy import
+__all__ = ['FraudCaseRetriever', 'build_fraud_case_database']
 
 
 if __name__ == '__main__':

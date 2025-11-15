@@ -1,0 +1,170 @@
+PROJECT STRUCTURE
+================================================================================
+
+Flag_finance/
+├── .env
+├── .gitignore
+├── CUsersyouss.kaggle
+├── Dockerfile
+├── README.md
+├── data
+│   ├── __results___files
+│   │   ├── __results___18_5.png
+│   │   └── __results___20_0.png
+│   ├── dataset-metadata.json
+│   ├── gnn_embeddings.pkl
+│   ├── graphs
+│   │   ├── elliptic_graph_data.pt
+│   │   ├── feature_scaler.joblib
+│   │   ├── graph_metadata.json
+│   │   └── id2idx.json
+│   ├── lstm_embeddings.pkl
+│   ├── models
+│   │   ├── AttentionFusion_best.pt
+│   │   ├── BiLSTM_Attention_best.pt
+│   │   ├── CrossModalFusion_best.pt
+│   │   ├── DeepSAGE_L6_H384_best.pt
+│   │   ├── DeepSAGE_L6_H384_history.json
+│   │   ├── DeepSAGE_L7_H400_best.pt
+│   │   ├── DeepSAGE_L7_H400_history.json
+│   │   ├── GatedFusion_best.pt
+│   │   ├── HybridGNN_L4_H320_best.pt
+│   │   ├── HybridGNN_L4_H320_history.json
+│   │   ├── LSTM_CNN_Hybrid_best.pt
+│   │   ├── ResidualGRU_best.pt
+│   │   ├── SimpleFusion_best.pt
+│   │   ├── UltraDeepSAGE_L8_H352_best.pt
+│   │   ├── UltraDeepSAGE_L8_H352_history.json
+│   │   └── fraud_explainer.pkl
+│   ├── processed
+│   │   ├── 01_data_exploration_summary.json
+│   │   ├── analysis_summary.json
+│   │   ├── elliptic_data.pt
+│   │   ├── elliptic_edges_enhanced.csv
+│   │   ├── elliptic_edges_idx.csv
+│   │   ├── elliptic_feat_cols.json
+│   │   ├── elliptic_feature_importance.csv
+│   │   ├── elliptic_id2idx.json
+│   │   ├── elliptic_metadata.json
+│   │   ├── elliptic_nodes_enhanced.csv
+│   │   ├── elliptic_nodes_minimal.csv
+│   │   ├── elliptic_nodes_sample.csv
+│   │   ├── elliptic_sample_enhanced.csv
+│   │   ├── elliptic_scaler.joblib
+│   │   ├── exploration_metadata.json
+│   │   ├── exploration_summary.json
+│   │   ├── paysim_data_enhanced.csv
+│   │   ├── paysim_sample_2pct.csv
+│   │   ├── paysim_sample_enhanced.csv
+│   │   ├── paysim_seqs_sample.pkl
+│   │   └── research_artifacts.json
+│   ├── rag_output
+│   │   ├── explanation_analysis.png
+│   │   ├── explanation_report.html
+│   │   ├── fraud_cases_database.json
+│   │   ├── rag_llm_results.json
+│   │   ├── sample_explanations.json
+│   │   └── transactions_with_explanations.csv
+│   ├── raw
+│   │   ├── PS_20174392719_1491204439457_log.csv
+│   │   ├── elliptic_bitcoin_dataset
+│   │   │   ├── elliptic_txs_classes.csv
+│   │   │   ├── elliptic_txs_edgelist.csv
+│   │   │   └── elliptic_txs_features.csv
+│   │   ├── test_transaction.csv
+│   │   └── train_identity.csv
+│   ├── results
+│   │   ├── CrossModalFusion_confusion_matrix.png
+│   │   ├── CrossModalFusion_training_curves.png
+│   │   ├── fusion_comparison.png
+│   │   ├── fusion_results.csv
+│   │   ├── fusion_results.json
+│   │   ├── gnn_kaggle_results.json
+│   │   ├── gnn_optimized_results.json
+│   │   ├── gnn_performance_metrics.json
+│   │   ├── kaggle_session_tracking.json
+│   │   ├── lstm_confusion_matrices.png
+│   │   ├── lstm_performance_comparison.png
+│   │   ├── lstm_results.json
+│   │   ├── lstm_training_curves.png
+│   │   ├── lstm_training_histories.json
+│   │   ├── research_summary.json
+│   │   ├── training_histories.json
+│   │   └── training_histories_kaggle.json
+│   ├── results.zip
+│   ├── sequence_generator.pkl
+│   └── vector_db
+│       └── fraud_cases_faiss
+│           ├── index.faiss
+│           ├── index.pkl
+│           ├── info.json
+│           └── metadata.pkl
+├── docker-compose.yml
+├── extract_code.py
+├── fusion_meta.json
+├── models
+│   ├── AttentionFusion_best.pt
+│   ├── CrossModalFusion_best.pt
+│   ├── GatedFusion_best.pt
+│   ├── SimpleFusion_best.pt
+│   ├── best.pt
+│   └── fraud_explainer.pkl
+├── notebooks
+│   ├── .ipynb_checkpoints
+│   │   ├── 00_gpu_verification-checkpoint.ipynb
+│   │   ├── 01_data_exploration-checkpoint.ipynb
+│   │   ├── 01_data_exploration_enhanced-checkpoint.ipynb
+│   │   ├── 02_graph_construction_elliptic-checkpoint.ipynb
+│   │   ├── 03_gnn_baseline_training-checkpoint.ipynb
+│   │   ├── 03_gnn_baseline_training.ipynb-checkpoint.backup
+│   │   ├── 03_gnn_best_tuned-checkpoint.ipynb
+│   │   ├── 03_gnn_optimized_training-checkpoint.ipynb
+│   │   ├── 05_hybrid_fusion_model-checkpoint.ipynb
+│   │   ├── 06_rag_llm_integration-checkpoint.ipynb
+│   │   └── 07_end_to_end_pipeline-checkpoint.ipynb
+│   ├── 00_gpu_verification.ipynb
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_graph_construction_elliptic.ipynb
+│   ├── 03-gnn-baseline-training(kaggle).ipynb
+│   ├── 04-sequence-lstm-baseline-kaggle.ipynb
+│   ├── 05_hybrid_fusion_model.ipynb
+│   ├── 06-rag-llm-intagration-kaggle.ipynb
+│   └── 07_end_to_end_pipeline.ipynb
+├── pipeline_output
+│   ├── all_predictions.pkl
+│   ├── complete_pipeline_evaluation.png
+│   ├── deployment_checklist.json
+│   ├── model_comparison.csv
+│   ├── pipeline_report.json
+│   ├── pipeline_summary.txt
+│   ├── rag_llm_results.json
+│   └── sample_predictions.json
+├── rag_output
+│   ├── sample_explanations.json
+│   └── template_explanations_preview.json
+├── rag_requirements.txt
+├── rebuild_vectordb.py
+├── requirements.txt
+├── results
+│   ├── GatedFusion_test_predictions.json
+│   └── fusion_results.json
+├── src
+│   ├── api
+│   │   ├── app.py
+│   │   ├── debug_model_checkpoint.py
+│   │   └── predict.py
+│   ├── data
+│   │   ├── build_graph.py
+│   │   ├── ingest.py
+│   │   └── sequences.py
+│   ├── models
+│   │   ├── fusion.py
+│   │   ├── gnn.py
+│   │   └── lstm_seq.py
+│   └── rag
+│       ├── llm_prompting.py
+│       └── retriever.py
+└── vector_db
+    └── fraud_cases_faiss
+        ├── index.faiss
+        └── index.pkl
