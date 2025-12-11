@@ -222,14 +222,11 @@ Contributions are welcome! Please:
 4. Push to the branch
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📧 Contact
 
-- **Author**: Youssef
-- **Email**: your.email@example.com
+- **Author**: Youssef Boujmil
+- **Email**: youssef.boujmil@supcom.tn
 - **Project Link**: https://github.com/yourusername/flag-finance
 
 ## 🙏 Acknowledgments
@@ -240,18 +237,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - PyTorch Geometric Team
 - Hugging Face Community
 
-## 📖 Citation
 
-If you use this project in your research, please cite:
-
-```bibtex
-@software{flag_finance_2024,
-  author = {Youssef},
-  title = {FLAG-Finance: Multi-Modal Fraud Detection System},
-  year = {2024},
-  url = {https://github.com/yourusername/flag-finance}
-}
-```
 
 ---
 
